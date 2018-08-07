@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "504296036236",
+    "firebase_url": "https://stone-54e0c.firebaseio.com",
+    "project_id": "stone-54e0c",
+    "storage_bucket": "stone-54e0c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:504296036236:android:f6696cc88a09c89b",
+        "android_client_info": {
+          "package_name": "com.onethirds.stone.stoneactual"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "504296036236-k9rmmtphc96d18128dv8dn7ct6c0tlqq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.onethirds.stone.stoneactual",
+            "certificate_hash": "dfc82f14c9f69d7b393041af2325fe41b2621dc8"
+          }
+        },
+        {
+          "client_id": "504296036236-qn1dvq1p0b6ma0jrqpfuoajeqtj0cn82.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjuWAeIFDQBYBW9tiUlktKHkERj6tr8Xo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "504296036236-qn1dvq1p0b6ma0jrqpfuoajeqtj0cn82.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
