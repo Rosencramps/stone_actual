@@ -4,6 +4,11 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import './MainPage.dart';
 import './Start&Colors.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final FirebaseAuth _auth = FirebaseAuth.instance;
+final GoogleSignIn _googleSignIn = new GoogleSignIn();
 
 class SignUp extends StatefulWidget {
   String value;
@@ -21,8 +26,8 @@ class _SignUpState extends State<SignUp> {
   String happy;
   @override
   Widget build(BuildContext context) {
-    final signUp = Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.0),
+    final signIn = Padding(
+      padding: EdgeInsets.symmetric(vertical: 0.0),
       child: Material(
         borderRadius: BorderRadius.circular(30.0),
         shadowColor: Colors.black,
@@ -41,11 +46,40 @@ class _SignUpState extends State<SignUp> {
             Navigator.of(context).push(route);
           },
           color: widget.secondary,
-          child: Text('Sign Up',
+          child: Text('Sign In',
               style: TextStyle(color: widget.primary)),
         ),
       ),
     );
+
+    final googleSignIn = new Material(
+      borderRadius: BorderRadius.circular(30.0),
+      shadowColor: Colors.black,
+      elevation: 5.0,
+      child: MaterialButton(
+        minWidth: 200.0,
+        height: 42.0,
+        onPressed: () => _gSignIn(),
+        color: widget.secondary,
+        child: Text('Google Sign In',
+            style: TextStyle(color: widget.primary)),
+      ),
+    );
+
+    final emailSignUp = new Material(
+      borderRadius: BorderRadius.circular(30.0),
+      shadowColor: Colors.black,
+      elevation: 5.0,
+      child: MaterialButton(
+        minWidth: 200.0,
+        height: 42.0,
+        onPressed: () => _emailSignUp(),
+        color: widget.secondary,
+        child: Text('Sign Up With An Email',
+            style: TextStyle(color: widget.primary)),
+      ),
+    );
+
     final stoneName = new Container(
       alignment: Alignment.topCenter,
       padding: EdgeInsets.only(bottom: 150.0),
@@ -109,12 +143,32 @@ class _SignUpState extends State<SignUp> {
             yourName,
             SizedBox(height: 5.0),
             password,
-            signUp,
+            signIn,
+            googleSignIn,
+            emailSignUp,
           ],
         ),
       ),
     );
   }
+
+  Future<FirebaseUser> _gSignIn() async {
+    GoogleSignInAccount googleSignInAccount = await _googleSignIn.signIn();
+    GoogleSignInAuthentication googleSignInAuthentication =
+    await googleSignInAccount.authentication;
+
+    FirebaseUser user = await _auth.signInWithGoogle(
+        idToken: googleSignInAuthentication.idToken,
+        accessToken: googleSignInAuthentication.accessToken);
+
+    print("User is: ${user.displayName}");
+    return user;
+  }
+
+  _emailSignUp() async {
+
+  }
+
 }
 class photoAdd extends StatefulWidget {
   String value;
