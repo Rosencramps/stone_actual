@@ -2,6 +2,8 @@ name: stone_actual
 description: Go ahead, throw some stones
 
 dependencies:
+  url_launcher: ^3.0.3
+  image_picker: ^0.4.6
   flutter:
     sdk: flutter
 
@@ -22,6 +24,11 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
+  fonts:
+       - family: Gelio
+         fonts:
+             - asset: fonts/Gelio.ttf
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -32,6 +39,11 @@ flutter:
   # assets:
   #  - images/a_dot_burr.jpeg
   #  - images/a_dot_ham.jpeg
+  assets:
+      - images/Rory1.jpg
+      - images/Rory2.jpg
+      - images/Rory3.jpg
+      - images/Rory4.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.
@@ -58,3 +70,4 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
+‘
