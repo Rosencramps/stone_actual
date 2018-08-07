@@ -161,7 +161,8 @@ class _SignUpState extends State<SignUp> {
         idToken: googleSignInAuthentication.idToken,
         accessToken: googleSignInAuthentication.accessToken);
 
-    print("User is: ${user.displayName}");
+    print('User is: ${user.displayName}');
+
     return user;
   }
 
@@ -207,17 +208,17 @@ class _photoAddState extends State<photoAdd> {
       ),
     ));
     final addPic = new MaterialButton(
-      onPressed: getImage,
-//      {
-//        primarySchoolColor = widget.primary;
-//        secondarySchoolColor = widget.secondary;
-//        happy = widget.value;
-//        var route = new MaterialPageRoute(
-//            builder: (BuildContext context) =>
-//            new mainPage(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
-//        );
-//        Navigator.of(context).push(route);
-//      },
+      onPressed: ()
+      {
+        primarySchoolColor = widget.primary;
+        secondarySchoolColor = widget.secondary;
+        happy = widget.value;
+        var route = new MaterialPageRoute(
+            builder: (BuildContext context) =>
+            new mainPage(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
+        );
+        Navigator.of(context).push(route);
+      },
       color: widget.primary,
       child: new Text(
         'Add Selfie',
