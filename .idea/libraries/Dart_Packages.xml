@@ -93,6 +93,13 @@
             </list>
           </value>
         </entry>
+        <entry key="firebase_storage">
+          <value>
+            <list>
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/firebase_storage-1.0.1/lib" />
+            </list>
+          </value>
+        </entry>
         <entry key="flutter">
           <value>
             <list>
@@ -431,6 +438,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/firebase_auth-0.5.15/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/firebase_core-0.2.5/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/firebase_database-1.0.3/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/firebase_storage-1.0.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/front_end-0.1.0-alpha.12/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/glob-1.1.5/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dartlang.org/google_sign_in-3.0.4/lib" />

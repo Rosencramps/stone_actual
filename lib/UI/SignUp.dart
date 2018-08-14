@@ -91,7 +91,7 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
                   height: 42.0,
                   onPressed: (){},
                   color: widget.secondary,
-                  child: Text('Google Sign In',
+                  child: Text('Useless Button',
                       style: TextStyle(color: widget.primary)),
                 ),
               ),
@@ -207,13 +207,13 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
   }
 
   _signInWithEmail() {
-    var validated = true;
+    var succeed = true;
 
     _auth.signInWithEmailAndPassword(
         email: emailInput.text, password: passwordInput.text)
         .catchError((error) {
       print("Oops, something went wrong! ${error.toString()}");
-      validated = false;
+      succeed = false;
       showDialog(
           context: context,
           builder: (_) => new AlertDialog(
@@ -232,7 +232,7 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
           )
       );
     }).then((newUser) {
-      if (validated == true && newUser.isEmailVerified) {
+      if (succeed == true && newUser.isEmailVerified) {
         _successfulLogin();
       } else {
         print("User Not Authenticated");
@@ -329,4 +329,3 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
 //    super.dispose();
 //  }
 }
-

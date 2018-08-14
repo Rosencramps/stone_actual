@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import './PhotoAdd.dart';
 
-final FirebaseDatabase database = FirebaseDatabase.instance;
+final FirebaseDatabase _database = FirebaseDatabase.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class createUser extends StatefulWidget {
@@ -204,6 +204,7 @@ class _CreateUserState extends State<createUser> {
   }
 
   Future _createUser() async {
+    var succeed = true;
     FirebaseUser user = await _auth.createUserWithEmailAndPassword(
         email: widget.email, password: widget.password).catchError((error){
       showDialog(
@@ -223,28 +224,31 @@ class _CreateUserState extends State<createUser> {
               ]
           )
       );
+      succeed = false;
     })
         .then((user) {
-      primarySchoolColor = widget.primary;
-      secondarySchoolColor = widget.secondary;
-      happy = widget.value;
+          if(succeed == true){
+            primarySchoolColor = widget.primary;
+            secondarySchoolColor = widget.secondary;
+            happy = widget.value;
 
-      user.sendEmailVerification();
+            user.sendEmailVerification();
 
-      var route = new MaterialPageRoute(
-          builder: (BuildContext context) => new photoAdd(
-            value: happy,
-            primary: primarySchoolColor,
-            secondary: secondarySchoolColor,
-          )
-      );
+            var route = new MaterialPageRoute(
+                builder: (BuildContext context) => new photoAdd(
+                  value: happy,
+                  primary: primarySchoolColor,
+                  secondary: secondarySchoolColor,
+                )
+            );
 
 //      database.reference() .child("school").set({
 //        "primary color": primarySchoolColor,
 //        "secondary color": secondarySchoolColor,
 //      });
-      saveUserFirebase();
-      Navigator.of(context).push(route);
+            saveUserFirebase();
+            Navigator.of(context).push(route);
+          };
     })
 //        .then((FirebaseUser user) {
 //      // upon success, send email verification
@@ -255,17 +259,18 @@ class _CreateUserState extends State<createUser> {
 
   Future<String> saveUserFirebase() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
-    database.reference() .child("users").update({
+    final timestamp = new DateTime.now().millisecondsSinceEpoch;
+    _database.reference() .child("users").update({
       user.uid : ""
     });
-    database.reference().child("users").child(user.uid).set({
+    _database.reference().child("users").child(user.uid).set({
       "name" : firstNameInput.text,
-      "school" : happy
+      "school" : happy,
+      "timestamp" : timestamp
     });
-    database.reference().child("users").child(user.uid).child("happy").set({
+    _database.reference().child("users").child(user.uid).child("happy").set({
       "primaryColor" : primarySchoolColor.value.toString(),
       "secondaryColor" : secondarySchoolColor.value.toString()
     });
   }
-
 }
