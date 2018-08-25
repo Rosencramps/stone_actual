@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import './PhotoAdd.dart';
-import './CreateUser.dart';
+import 'package:stone_actual/Logic/CreateUser.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 

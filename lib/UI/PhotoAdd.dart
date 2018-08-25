@@ -1,11 +1,15 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:io';
 import './MainPage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import './User_Profile.dart';
+import 'dart:convert';
+import 'package:http/http.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseStorage _storage = FirebaseStorage.instance;
 
@@ -14,7 +18,7 @@ class photoAdd extends StatefulWidget {
   Color primary;
   Color secondary;
 
-  final FirebaseStorage storage;
+//  final FirebaseStorage storage;
 
   photoAdd({Key key, this.value, this.primary, this.secondary})
       : super(key: key);
@@ -57,45 +61,56 @@ class _photoAddState extends State<photoAdd> {
   }
 
   Future _uploadImageToFirebase() async {
-    FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final userReference = Firestore.instance.collection("users");
+    final schoolReference = Firestore.instance.collection("schools");
     var succeed = true;
-    var rng = new Random();
-    var fileName = "Photo${rng.nextInt(10000)}.jpeg";
-    StorageUploadTask putFile =
-    _storage.ref().child("userPhotos/${user.uid}/$fileName").putFile(_image);
+    var fileName = "PhotoSelfie.jpeg";
+
+    FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    StorageUploadTask putFile = _storage.ref().child("userPhotos/${user.uid}/$fileName").putFile(_image);
+
     putFile.future.catchError((error){
       succeed = false;
-    }).then((uploaded){
+
+    }).then((uploaded) async {
       if(succeed == true) {
+        final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg').getDownloadURL();
+
+        Map<String, String> seflieUrl = <String, String>{
+          "selfie" : "$downloadUrl",
+        };
+
+        userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(seflieUrl).whenComplete(() {
+          print("User Selfie Added");
+        }).catchError((e) => print(e));
+
+        schoolReference.document("$happy").collection("profiles").document("${user.uid}").setData(seflieUrl).whenComplete(() {
+          print("Profile Selfie Added");
+        }).catchError((e) => print(e));
+
+//        primarySchoolColor = widget.primary;
+//        secondarySchoolColor = widget.secondary;
+//        happy = widget.value;
+//
+//        var route = new MaterialPageRoute(
+//            builder: (BuildContext context) => new mainPage(
+//              value: happy,
+//              primary: primarySchoolColor,
+//              secondary: secondarySchoolColor,
+//            )
+//        );
+
         primarySchoolColor = widget.primary;
         secondarySchoolColor = widget.secondary;
         happy = widget.value;
         var route = new MaterialPageRoute(
-            builder: (BuildContext context) => new mainPage(
-              value: happy,
-              primary: primarySchoolColor,
-              secondary: secondarySchoolColor,
-            )
+            builder: (BuildContext context) =>
+            new profileCard1(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
         );
+
         Navigator.of(context).push(route);
-      };
+      }
     });
-
-    UploadTaskSnapshot uploadSnapshot = await putFile.future;
-
-    print("image uploaded");
-
-//    Map<String, dynamic> pictureData = new Map<String, dynamic>();
-//    pictureData["url"] = uploadSnapshot.downloadUrl.toString();
-//
-//
-//    DocumentReference collectionReference =
-//    Firestore.instance.collection("collection").document(fileName);
-//
-//    await Firestore.instance.runTransaction((transaction) async {
-//      await transaction.set(collectionReference, pictureData);
-//      print("instance created");
-//    }).catchError(onError);
   }
 
   @override
@@ -113,7 +128,7 @@ class _photoAddState extends State<photoAdd> {
       onPressed: getImage,
       color: widget.primary,
       child: new Text(
-        'Add Selfie',
+        'Add A Selfie',
         style: new TextStyle(
           color: Colors.white,
           fontSize: 15.0,
@@ -122,10 +137,22 @@ class _photoAddState extends State<photoAdd> {
     );
 
     final skipPic = new MaterialButton(
-      onPressed: getImage,
+      onPressed: () {
+        primarySchoolColor = widget.primary;
+        secondarySchoolColor = widget.secondary;
+        happy = widget.value;
+        var route = new MaterialPageRoute(
+            builder: (BuildContext context) => new mainPage(
+              value: happy,
+              primary: primarySchoolColor,
+              secondary: secondarySchoolColor,
+            )
+        );
+        Navigator.of(context).push(route);
+      },
       color: widget.primary,
       child: new Text(
-        'Add Selfie',
+        'Give Me A Sec',
         style: new TextStyle(
           color: Colors.white,
           fontSize: 15.0,
@@ -144,6 +171,19 @@ class _photoAddState extends State<photoAdd> {
         ),
       ),
     );
+
+    final nahWarning = new Container(
+      child: Center(
+        child: new Text(
+            'You Must upload a selfie within four days!',
+            style: new TextStyle(
+              color: widget.primary,
+              fontSize: 13.0,
+            )
+        ),
+      ),
+    );
+
     return new Scaffold(
         appBar: new AppBar(
           backgroundColor: widget.primary,
@@ -161,11 +201,70 @@ class _photoAddState extends State<photoAdd> {
               children: <Widget>[
                 SizedBox(height: 100.0),
                 image,
-                SizedBox(height: 150.0),
+                SizedBox(height: 130.0),
                 addPic,
-                SizedBox(height: 10.0),
+                SizedBox(height: 5.0),
                 selfieWarning,
+                SizedBox(height: 20.0),
+                skipPic,
+                SizedBox(height: 5.0),
+                nahWarning
               ],
             )));
   }
 }
+
+//Future _someMethod() async {
+////  final FirebaseStorage _storage = FirebaseStorage.instance;
+////  FirebaseUser user = await FirebaseAuth.instance.currentUser();
+////  final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg').getDownloadURL();
+////  final downUri = new Uri.file(downloadUrl);
+////  print("reg: $downUri");
+////  print("string: ${downUri as String}");
+////  print("filepath: ${downUri.toFilePath()}");
+////  print("path segments: ${downUri.pathSegments}");
+//
+//
+//  final userReference = Firestore.instance.collection("users");
+//  final schoolReference = Firestore.instance.collection("schools");
+//
+//  Map<String, String> usersUidData = <String, String>{
+//    "colorPrimary" : primarySchoolColor.value.toString(),
+//    "colorSecondary" : secondarySchoolColor.value.toString(),
+//    "firstPhoto" : "0",
+//    "name" : firstNameInput.text,
+//    "school" : happy,
+//    "secondaryPhoto" : "0",
+//    "selfie" : "0",
+//    "timestamp" : "$timestamp"
+//  };
+//
+//
+//  final FirebaseDatabase _database = FirebaseDatabase.instance;
+//  FirebaseUser user = await FirebaseAuth.instance.currentUser();
+////    if(done == "0";){
+////      _someMethod();
+////    } else {
+////      _someMethod();
+////    };
+//
+//
+////  var ref = await _database.reference().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg')
+//
+//  var ref = await _database.reference().child("todo").child(user.uid).child("photos").child("selfie").once().then((DataSnapshot){
+//    var downloadUrl = DataSnapshot.value;
+//    print(downloadUrl.toString());
+//    print(downloadUrl as String);
+//    //return downloadUrl as String;
+//  });
+//
+//  //print(ref);
+//
+////  downloadUrl =  var.parse(downloadUrl.toString());
+//  //print(downloadUrl.scheme);
+////  print(downloadUrl.toString());
+//
+////  final urlString = downloadUrl.toString();
+////  print(urlString);
+//  //return urlString;
+//}
