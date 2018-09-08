@@ -32,13 +32,34 @@ class _photoAddState extends State<photoAdd> {
   String happy;
   File _image;
 
+
+
   Future getImage() async {
     var image = await ImagePicker.pickImage(source: ImageSource.camera);
     setState(() {
       _image = image;
     });
     if(_image != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        child: new Center(
+          child: new SizedBox(
+              width: 40.0,
+              height: 40.0,
+              child:
+              const CircularProgressIndicator(
+//                value: null,
+                strokeWidth: 2.0,
+              )),
+        ),
+      );
+
       _uploadImageToFirebase();
+//      new Future.delayed(new Duration(seconds: 3), () {
+////        Navigator.pop(context); //pop dialog
+//      });
+
     } else {
       showDialog(
           context: context,
@@ -71,7 +92,6 @@ class _photoAddState extends State<photoAdd> {
 
     putFile.future.catchError((error){
       succeed = false;
-
     }).then((uploaded) async {
       if(succeed == true) {
         final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg').getDownloadURL();
@@ -88,21 +108,6 @@ class _photoAddState extends State<photoAdd> {
           print("Profile Selfie Added");
         }).catchError((e) => print(e));
 
-//        primarySchoolColor = widget.primary;
-//        secondarySchoolColor = widget.secondary;
-//        happy = widget.value;
-//
-//        var route = new MaterialPageRoute(
-//            builder: (BuildContext context) => new mainPage(
-//              value: happy,
-//              primary: primarySchoolColor,
-//              secondary: secondarySchoolColor,
-//            )
-//        );
-
-        primarySchoolColor = widget.primary;
-        secondarySchoolColor = widget.secondary;
-        happy = widget.value;
         var route = new MaterialPageRoute(
             builder: (BuildContext context) =>
             new profileCard1(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
@@ -138,11 +143,8 @@ class _photoAddState extends State<photoAdd> {
 
     final skipPic = new MaterialButton(
       onPressed: () {
-        primarySchoolColor = widget.primary;
-        secondarySchoolColor = widget.secondary;
-        happy = widget.value;
         var route = new MaterialPageRoute(
-            builder: (BuildContext context) => new mainPage(
+            builder: (BuildContext context) => new userProfiles12(
               value: happy,
               primary: primarySchoolColor,
               secondary: secondarySchoolColor,
@@ -213,58 +215,3 @@ class _photoAddState extends State<photoAdd> {
             )));
   }
 }
-
-//Future _someMethod() async {
-////  final FirebaseStorage _storage = FirebaseStorage.instance;
-////  FirebaseUser user = await FirebaseAuth.instance.currentUser();
-////  final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg').getDownloadURL();
-////  final downUri = new Uri.file(downloadUrl);
-////  print("reg: $downUri");
-////  print("string: ${downUri as String}");
-////  print("filepath: ${downUri.toFilePath()}");
-////  print("path segments: ${downUri.pathSegments}");
-//
-//
-//  final userReference = Firestore.instance.collection("users");
-//  final schoolReference = Firestore.instance.collection("schools");
-//
-//  Map<String, String> usersUidData = <String, String>{
-//    "colorPrimary" : primarySchoolColor.value.toString(),
-//    "colorSecondary" : secondarySchoolColor.value.toString(),
-//    "firstPhoto" : "0",
-//    "name" : firstNameInput.text,
-//    "school" : happy,
-//    "secondaryPhoto" : "0",
-//    "selfie" : "0",
-//    "timestamp" : "$timestamp"
-//  };
-//
-//
-//  final FirebaseDatabase _database = FirebaseDatabase.instance;
-//  FirebaseUser user = await FirebaseAuth.instance.currentUser();
-////    if(done == "0";){
-////      _someMethod();
-////    } else {
-////      _someMethod();
-////    };
-//
-//
-////  var ref = await _database.reference().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg')
-//
-//  var ref = await _database.reference().child("todo").child(user.uid).child("photos").child("selfie").once().then((DataSnapshot){
-//    var downloadUrl = DataSnapshot.value;
-//    print(downloadUrl.toString());
-//    print(downloadUrl as String);
-//    //return downloadUrl as String;
-//  });
-//
-//  //print(ref);
-//
-////  downloadUrl =  var.parse(downloadUrl.toString());
-//  //print(downloadUrl.scheme);
-////  print(downloadUrl.toString());
-//
-////  final urlString = downloadUrl.toString();
-////  print(urlString);
-//  //return urlString;
-//}

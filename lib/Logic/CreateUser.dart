@@ -285,12 +285,12 @@ class _CreateUserState extends State<createUser> {
       "name" : firstNameInput.text,
       "school" : happy,
       "sex" : sex,
-      "timestamp" : "$timestamp"
     };
 
     Map<String, int> usersUidColorData = <String, int>{
       "colorPrimary" : primarySchoolColor.value,
       "colorSecondary" : secondarySchoolColor.value,
+      "timestamp" : timestamp,
     };
 
     Map<String, String> usersPhotosUidData = <String, String>{

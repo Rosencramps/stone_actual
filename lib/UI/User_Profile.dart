@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 //import './profile1.dart';
 import './Profiles.dart';
-//import './settings.dart';
+import './Settings.dart';
 import './MainPage.dart';
-//import './Leaderboard.dart';
+import './Start&Colors.dart';
+import './LeaderboardPage.dart';
 //import './photo.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+
+var succeed = false;
+final FirebaseStorage _storage = FirebaseStorage.instance;
+final FirebaseAuth _auth = FirebaseAuth.instance;
+int visiblePhotoIndex;
 
 class userProfiles12 extends StatefulWidget {
   final Profile profile;
@@ -57,7 +66,7 @@ class ShadowText extends StatelessWidget {
             ),
           ),
           new BackdropFilter(
-            filter: new ui.ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+            filter: new ui.ImageFilter.blur(sigmaX: 0.0, sigmaY: 0.0),
             child: new Text(data, style: style),
           ),
         ],
@@ -71,8 +80,6 @@ class profileCard1 extends StatefulWidget {
   String value;
   Color primary;
   Color secondary;
-
-
 
   profileCard1({
     Key key,
@@ -94,19 +101,33 @@ class _profileCardState extends State<profileCard1> {
   CollectionReference collectionReference;
   Stream<DocumentSnapshot> userReference;
 
+
+  final String addPhotoUrl = "https://vignette.wikia.nocookie.net/fairytail/images/7/75/Armadura_Fairy.PNG/revision/latest?cb=20130303202008";
   var name;
+  bool isLoggedIn;
   int colorPrimary;
   int colorSecondary;
+  int timestamp;
   String rank;
-  var timestamp;
-
-
-
+  List<String> apples;
+  File _image;
 
   @override
   void initState() {
     super.initState();
-    getLists();
+
+    _isUserLoggedIn();
+
+//    if(_auth.currentUser() == null) {
+//      var route = new MaterialPageRoute(
+//          builder: (BuildContext context) => new userProfiles12(
+//          )
+//      );
+//      Navigator.of(context).push(route);
+//    };
+//
+//    getLists();
+
     // _currentScreen();
   }
 
@@ -115,17 +136,14 @@ class _profileCardState extends State<profileCard1> {
     subscription?.cancel();
     super.dispose();
   }
-  Color primarySchoolColor;
-  Color secondarySchoolColor;
-  String happy;
+
   Widget _buildBackground() {
-    List<String> apples;
     String selfie;
     String firstPic;
     String secondPic;
-    selfie = photosList[0].data['selfie'];
-    firstPic = photosList[0].data['firstPhoto'];
-    secondPic = photosList[0].data['secondaryPhoto'];
+    succeed ? selfie = photosList[0].data['selfie'] : selfie = addPhotoUrl;
+    succeed ? firstPic = photosList[0].data['firstPhoto'] : firstPic = addPhotoUrl;
+    succeed ? secondPic = photosList[0].data['secondaryPhoto'] : secondPic = addPhotoUrl;
     print(selfie);
     print(firstPic);
     print(secondPic);
@@ -135,10 +153,10 @@ class _profileCardState extends State<profileCard1> {
       secondPic
     ];
 
-    return new PhotoBrowser(
-      photoAssetPaths: apples,
-      visiblePhotoIndex: 0,
-    );
+      return new PhotoBrowser(
+        photoAssetPaths: apples,
+        visiblePhotoIndex: 0,
+      );
   }
 
   Widget _buildProfileSynopsis() {
@@ -172,23 +190,12 @@ class _profileCardState extends State<profileCard1> {
                           color: Colors.white,
                           size: 40.0,
                         ),
-                        onPressed: null,
-//                            () {
-//                          Navigator.push(
-//                            context,
-//                            MaterialPageRoute(builder: (context) => Leaderboard()),
-//                          );
-//                        },
-//                              (){
-//                            primarySchoolColor = widget.primary;
-//                            secondarySchoolColor = widget.secondary;
-//                            happy = widget.value;
-//                            var route = new MaterialPageRoute(
-//                                builder: (BuildContext context) =>
-//                                new Leaderboard(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
-//                            );
-//                            Navigator.of(context).push(route);
-                        //}
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => leaderboard()),
+                          );
+                        }
                       )
                     ],
                   )),
@@ -213,7 +220,7 @@ class _profileCardState extends State<profileCard1> {
     return new Container(
       alignment: Alignment.center,
       padding: EdgeInsets.fromLTRB(0.0, 500.0, 0.0, 0.0),
-      child:  new ShadowText('#54',
+      child:  new ShadowText(succeed ? "$rank" : "",
         style: new TextStyle(
             color: Colors.white.withOpacity(0.25),
             fontSize: 150.0,
@@ -227,20 +234,20 @@ class _profileCardState extends State<profileCard1> {
         alignment: Alignment.topLeft,
         child: new InkWell(
           child: new ShadowText(
-            name,
+            succeed ? name : "",
             style: new TextStyle(
                 color: Colors.white,
                 fontFamily: 'Gelio',
                 fontSize: 40.0
             ),
           ),
-          onTap: null,
-//              () {
-//            Navigator.push(
-//              context,
-//              MaterialPageRoute(builder: (context) => settingPage()),
-//            );
-//          },
+          onTap:
+              () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => settingPage()),
+            );
+          },
         )
     );
   }
@@ -254,7 +261,7 @@ class _profileCardState extends State<profileCard1> {
             color: Colors.white,
             size: 40.0
         ),
-        onPressed: null,
+        onPressed: getImage,
 //            () {
 //          Navigator.push(
 //            context,
@@ -265,25 +272,157 @@ class _profileCardState extends State<profileCard1> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  _timestampDifference() {
+    final CurrentTimestamp = new DateTime.now().millisecondsSinceEpoch;
+    int timestampDifference;
+    timestampDifference = CurrentTimestamp - timestamp;
+
+    print("timestamp diff: $timestampDifference");
+
+      if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
+        if(timestampDifference > 0 && timestampDifference <= 86400000) {
+          return 'You Have 3 Days To Upload New Photos Or Else You Cannot View Profiles';
+        } else if (timestampDifference <= 172800000) {
+          return 'You Have 2 Days To Upload New Photos Or Else You Cannot View Profiles';
+        } else if (timestampDifference <= 259200000) {
+          return 'You Have 1 Day To Upload New Photos Or Else You Cannot View Profiles';
+        } else if (timestampDifference <= 345600000) {
+          return 'It Is Your Last Day To Upload New Photos Or Else You Cannot View Profiles';
+        } else if (timestampDifference > 345600000 || timestampDifference == 0) {
+          return 'You Must Wait Until The Start Of Next Month To Be A Contender';
+        }
+      }
+  }
+
+
+  Widget _uploadPhotosText() {
+//    final currentTimestamp = new DateTime.now().millisecondsSinceEpoch;
+//    int timestampDifference;
+//    succeed ? timestampDifference = currentTimestamp - timestamp : timestampDifference = 0;
+//
+//    print("_uploadPhotosText timestamp diff: $timestampDifference");
+//
+//    if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
+//
+//      if(timestampDifference > 0 && timestampDifference <= 86400000) {
+//        return new Container(
+//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
+//          alignment: Alignment.bottomCenter,
+//          child: new Text(
+//              'You Have 3 Days To Upload New Photos Or Else You Cannot View Profiles',
+//              textAlign: TextAlign.center,
+//              style: new TextStyle(
+//                fontSize: 20.0,
+//                fontFamily: 'Gelio',
+//                color: Colors.white,
+//              )
+//          ),
+//        );
+//      } else if (timestampDifference <= 172800000) {
+//        return new Container(
+//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
+//          alignment: Alignment.bottomCenter,
+//          child: new Text(
+//              'You Have 2 Days To Upload New Photos Or Else You Cannot View Profiles',
+//              textAlign: TextAlign.center,
+//              style: new TextStyle(
+//                fontSize: 20.0,
+//                fontFamily: 'Gelio',
+//                color: Colors.white,
+//              )
+//          ),
+//        );
+//      } else if (timestampDifference <= 259200000) {
+//        return new Container(
+//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
+//          alignment: Alignment.bottomCenter,
+//          child: new Text(
+//              'You Have 1 Days To Upload New Photos Or Else You Cannot View Profiles',
+//              textAlign: TextAlign.center,
+//              style: new TextStyle(
+//                fontSize: 20.0,
+//                fontFamily: 'Gelio',
+//                color: Colors.white,
+//              )
+//          ),
+//        );
+//      } else if (timestampDifference <= 345600000) {
+//        return new Container(
+//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
+//          alignment: Alignment.bottomCenter,
+//          child: new Text(
+//              'It Is Your Last Day To Upload New Photos Or Else You Cannot View Profiles',
+//              textAlign: TextAlign.center,
+//              style: new TextStyle(
+//                fontSize: 20.0,
+//                fontFamily: 'Gelio',
+//                color: Colors.red,
+//              )
+//          ),
+//        );
+//      } else if (timestampDifference > 345600000 || timestampDifference == 0) {
+//        return new Container(
+//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
+//          alignment: Alignment.bottomCenter,
+//          child: new Text(
+//              'You Must Wait Until The Start Of Next Month To Be A Contender',
+//              textAlign: TextAlign.center,
+//              style: new TextStyle(
+//                fontSize: 20.0,
+//                fontFamily: 'Gelio',
+//                color: Colors.transparent,
+//              )
+//          ),
+//        );
+//      }
+//    }
+
     return new Container(
-      child: ClipRRect(
-        borderRadius: new BorderRadius.circular(5.0),
-        child: new Material(
-          child: new Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              _buildBackground(),
-              _rank(),
-              _buildProfileSynopsis(),
-              _topButton(),
-              _topRightButton(),
-            ],
-          ),
-        ),
+      padding: EdgeInsets.fromLTRB(50.0, 00.0, 50.0, 28.0),
+      alignment: Alignment.bottomCenter,
+      child: new Text(
+          succeed ? _timestampDifference() : '',
+          textAlign: TextAlign.center,
+          style: new TextStyle(
+            fontSize: 15.0,
+            fontFamily: 'Gelio',
+            color: Colors.white,
+          )
       ),
     );
+  }
+
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    if(isLoggedIn == true) {
+      return new Container(
+        child: ClipRRect(
+          borderRadius: new BorderRadius.circular(5.0),
+          child: new Material(
+            child: new Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                _buildBackground(),
+                _rank(),
+                _buildProfileSynopsis(),
+                _topButton(),
+                _topRightButton(),
+                _uploadPhotosText(),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      return new Container(
+        child: new Scaffold(
+          backgroundColor: Colors.white,
+        ),
+      );
+    };
   }
 
   void getLists() async {
@@ -307,14 +446,145 @@ class _profileCardState extends State<profileCard1> {
         if(datasnapshot.data['rank'] != null) {
           rank = datasnapshot.data['rank'];
         } else {
-          rank = ">100";
+          rank = "";
         }
         print("name : $name");
         print("colorPrimary : $colorPrimary");
         print("c0p0r_r8kary : $colorSecondary");
         print("name : $timestamp");
         print("name : $rank");
+        succeed = true;
       });
+    });
+  }
+
+  Future getImage() async {
+
+    showDialog(
+        context: context,
+        builder: (_) =>
+        new AlertDialog (
+            content: new Text(
+              "Upload A New Photo, ",
+            ),
+            actions: <Widget>[
+              new FlatButton (
+                child: new Text('Take A Photo'),
+                color: Colors.black,
+                onPressed: () {
+                  getImageCamera();
+                  Navigator.of(context).pop();
+                },
+              ),
+              new FlatButton(
+                child: new Text('Choose One'),
+                color: Colors.black,
+                onPressed: () {
+                  getImageGallery();
+                  Navigator.of(context).pop();
+                },
+              )
+            ]
+        )
+    );
+
+//    setState(() {
+//      _image = image;
+//    });
+//    if(_image != null) {
+//      _uploadImageToFirebase();
+//    } else {
+//      showDialog(
+//          context: context,
+//          builder: (_) => new AlertDialog(
+//              content: new Text(
+//                "Your photo got janked up somehow",
+//              ),
+//              actions: <Widget>[
+//                new FlatButton(
+//                  child: new Text('Retake it'),
+//                  color: Colors.black,
+//                  onPressed: () {
+//                    Navigator.of(context).pop();
+//                  },
+//                )
+//              ]
+//          )
+//      );
+//    };
+  }
+
+  Future getImageCamera() async {
+    var cameraImage = await ImagePicker.pickImage(source: ImageSource.camera);
+
+    setState(() {
+      _image = cameraImage;
+    });
+    if(_image != null) {
+      _uploadImageToFirebase(_image);
+    } else {
+      showDialog(
+          context: context,
+          builder: (_) => new AlertDialog(
+              content: new Text(
+                "Your photo got janked up somehow",
+              ),
+              actions: <Widget>[
+                new FlatButton(
+                  child: new Text('Retake it'),
+                  color: Colors.black,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                )
+              ]
+          )
+      );
+    };
+  }
+
+  Future getImageGallery() async {
+    var cameraImage = await ImagePicker.pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      _image = cameraImage;
+    });
+    if(_image != null) {
+      _uploadImageToFirebase(_image);
+    } else {
+      showDialog(
+          context: context,
+          builder: (_) => new AlertDialog(
+              content: new Text(
+                "Your photo got janked up somehow",
+              ),
+              actions: <Widget>[
+                new FlatButton(
+                  child: new Text('Retake it'),
+                  color: Colors.black,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                )
+              ]
+          )
+      );
+    };
+  }
+
+  void _isUserLoggedIn() {
+    _auth.currentUser().then((value){
+      if(value == null) {
+        isLoggedIn = false;
+        var route = new MaterialPageRoute(
+            builder: (BuildContext context) => new StoneLogin(
+            )
+        );
+        Navigator.of(context).push(route);
+      } else {
+        isLoggedIn = true;
+        getLists();
+      };
     });
   }
 }
@@ -329,7 +599,6 @@ class PhotoBrowser extends StatefulWidget {
 }
 
 class _PhotoBrowserState extends State<PhotoBrowser> {
-  int visiblePhotoIndex;
 
   @override
   void initState() {
@@ -396,10 +665,16 @@ class _PhotoBrowserState extends State<PhotoBrowser> {
     return new Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        new Image.network(
-          widget.photoAssetPaths[visiblePhotoIndex],
-          fit: BoxFit.cover,
-        ),
+        widget.photoAssetPaths[visiblePhotoIndex] != null ?
+        new FadeInImage(
+            fit: BoxFit.cover,
+            placeholder: new AssetImage('images/StoneLightGrey.png'),
+            image: new NetworkImage(widget.photoAssetPaths[visiblePhotoIndex]))
+        : new CircularProgressIndicator(),
+//        new Image.network(
+//          widget.photoAssetPaths[visiblePhotoIndex],
+//          fit: BoxFit.cover,
+//        ),
         new Positioned(
           top: 0.0,
           left: 0.0,
@@ -475,6 +750,7 @@ class SelectedPhotoIndicator extends StatelessWidget {
   List<Widget> _buildIndicators() {
     List<Widget> indicators = [];
     for (int i = 0; i < photoCount; ++i) {
+      print(i);
       indicators.add(i == visiblePhotoIndex
           ? _buildActiveIndicators()
           : _buildInactiveIndicators());
@@ -491,4 +767,53 @@ class SelectedPhotoIndicator extends StatelessWidget {
       ),
     );
   }
+}
+
+Future _uploadImageToFirebase(File _image) async {
+  final userReference = Firestore.instance.collection("users");
+  var succeed = true;
+  var fileName;
+  String photoPath;
+
+  FirebaseUser user = await FirebaseAuth.instance.currentUser();
+
+  if(visiblePhotoIndex == 0) {
+    fileName = "PhotoSelfie.jpeg";
+    photoPath = "selfie";
+  } else if (visiblePhotoIndex == 1) {
+    fileName = "FirstPhoto.jpeg";
+    photoPath = "firstPhoto";
+  } else if (visiblePhotoIndex == 2) {
+    fileName = "SecondaryPhoto.jpeg";
+    photoPath = "secondaryPhoto";
+  };
+
+  StorageUploadTask putFile = _storage.ref().child("userPhotos/${user.uid}/$fileName").putFile(_image);
+
+  putFile.future.catchError((error){
+    succeed = false;
+
+  }).then((uploaded) async {
+    if(succeed == true) {
+      final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('$fileName').getDownloadURL();
+
+      Map<String, String> photoUrl = <String, String>{
+        photoPath : "$downloadUrl",
+      };
+
+      userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(photoUrl).whenComplete(() {
+        print("Photo Added");
+      }).catchError((e) => print(e));
+
+
+      //todo if users have all three photos in a timely manner add to school
+
+//      final schoolReference = Firestore.instance.collection("schools");
+
+//      schoolReference.document("$happy").collection("profiles").document("${user.uid}").setData(seflieUrl).whenComplete(() {
+//        print("Profile Selfie Added");
+//      }).catchError((e) => print(e));
+
+    }
+  });
 }

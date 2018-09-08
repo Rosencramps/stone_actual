@@ -531,7 +531,6 @@ class _profileCardState extends State<profileCard> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     subscription = collectionReference.snapshots().listen((datasnapshot) {
       setState(() {

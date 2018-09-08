@@ -116,7 +116,10 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
       ],
     );
 
-    final emailSignOut = new Material(
+    final emailSignOut = new Container(
+      alignment: Alignment.bottomCenter,
+      padding: EdgeInsets.only(bottom: 25.0),
+      child: new Material(
       borderRadius: BorderRadius.circular(30.0),
       shadowColor: Colors.black,
       elevation: 5.0,
@@ -128,11 +131,11 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
         child: Text('email sign out',
             style: TextStyle(color: widget.primary)),
       ),
-    );
+    ));
 
     final stoneName = new Container(
       alignment: Alignment.topCenter,
-      padding: EdgeInsets.only(bottom: 150.0),
+      padding: EdgeInsets.only(bottom: 200.0),
       child: new Text(
         'Stone',
         style: new TextStyle(
@@ -188,6 +191,7 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
           FocusScope.of(context).requestFocus(FocusNode());
         },
         child: ListView(
+          reverse: true,
           padding: EdgeInsets.only(left: 24.0, right: 24.0),
           children: <Widget>[
             SizedBox(height: _animation.value),
@@ -200,7 +204,7 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin{
             signIn,
             googleAndSignUp,
             emailSignOut,
-          ],
+          ].reversed.toList(),
         ),
       ),
     );
