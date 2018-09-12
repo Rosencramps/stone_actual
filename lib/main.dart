@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import './UI/Settings.dart';
 import './UI/Start&Colors.dart';
 import './UI/User_Profile.dart';
 import './iDontGiveAFuck.dart';
@@ -10,6 +11,7 @@ void main() {
   runApp(new MaterialApp(
     debugShowCheckedModeBanner: false,
     home: new userProfiles12(),
+//    home: new settingPage(),
     theme: ThemeData(
         primaryColor: Colors.white,
         accentColor: Colors.white,

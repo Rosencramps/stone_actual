@@ -277,17 +277,17 @@ class _CreateUserState extends State<createUser> {
     final timestamp = new DateTime.now().millisecondsSinceEpoch;
 
     final userReference = Firestore.instance.collection("users");
-    final schoolReference = Firestore.instance.collection("schools");
 
     Map<String, String> usersUidData = <String, String>{
       "colorPrimary" : primarySchoolColor.value.toString(),
       "colorSecondary" : secondarySchoolColor.value.toString(),
+      "hasThreePhotos" : "no",
       "name" : firstNameInput.text,
       "school" : happy,
       "sex" : sex,
     };
 
-    Map<String, int> usersUidColorData = <String, int>{
+    Map<String, int> usersUidIntData = <String, int>{
       "colorPrimary" : primarySchoolColor.value,
       "colorSecondary" : secondarySchoolColor.value,
       "timestamp" : timestamp,
@@ -299,29 +299,16 @@ class _CreateUserState extends State<createUser> {
       "selfie" : "https://vignette.wikia.nocookie.net/konosuba/images/4/4f/Megumin_1.jpg/revision/latest?cb=20180502131754",
     };
 
-    Map<String, String> profileUidData = <String, String>{
-      "firstPhoto" : "0",
-      "name" : firstNameInput.text,
-      "secondaryPhoto" : "0",
-      "selfie" : "0",
-      "timestamp" : "$timestamp"
-    };
-
     userReference.document("${user.uid}").setData(usersUidData).whenComplete(() {
       print("User Added");
     }).catchError((e) => print(e));
 
-    userReference.document("${user.uid}").updateData(usersUidColorData).whenComplete(() {
+    userReference.document("${user.uid}").updateData(usersUidIntData).whenComplete(() {
       print("User Added");
     }).catchError((e) => print(e));
 
     userReference.document("${user.uid}").collection("photos").document("photosDoc").setData(usersPhotosUidData).whenComplete(() {
       print("User Photos Added");
-    }).catchError((e) => print(e));
-
-
-    schoolReference.document("$happy").collection("profiles").document("${user.uid}").setData(profileUidData).whenComplete(() {
-      print("Profile Added");
     }).catchError((e) => print(e));
 
 //    documentReference.updateData(data).whenComplete(() {

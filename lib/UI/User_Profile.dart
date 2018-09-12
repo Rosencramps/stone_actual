@@ -34,10 +34,10 @@ class userProfiles12 extends StatefulWidget {
     this.profile,
   }) : super(key: key);
   @override
-  _userProfilesState createState() => _userProfilesState();
+  _UserProfilesState createState() => _UserProfilesState();
 }
 
-class _userProfilesState extends State<userProfiles12> {
+class _UserProfilesState extends State<userProfiles12> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -89,10 +89,10 @@ class profileCard1 extends StatefulWidget {
     this.profile,
   }) : super(key: key);
   @override
-  _profileCardState createState() => _profileCardState();
+  _ProfileCardState createState() => _ProfileCardState();
 }
 
-class _profileCardState extends State<profileCard1> {
+class _ProfileCardState extends State<profileCard1> {
   StreamSubscription<QuerySnapshot> subscription;
   StreamSubscription<DocumentSnapshot> userListSubscription;
   List<DocumentSnapshot> photosList;
@@ -102,8 +102,11 @@ class _profileCardState extends State<profileCard1> {
   Stream<DocumentSnapshot> userReference;
 
 
-  final String addPhotoUrl = "https://vignette.wikia.nocookie.net/fairytail/images/7/75/Armadura_Fairy.PNG/revision/latest?cb=20130303202008";
-  var name;
+  final String addPhotoUrl = "https://vignette.wikia.nocookie.net/konosuba/images/4/4f/Megumin_1.jpg/revision/latest?cb=20180502131754";
+  String name;
+  String hasThreePhotos;
+  String school;
+  String uid;
   bool isLoggedIn;
   int colorPrimary;
   int colorSecondary;
@@ -144,9 +147,6 @@ class _profileCardState extends State<profileCard1> {
     succeed ? selfie = photosList[0].data['selfie'] : selfie = addPhotoUrl;
     succeed ? firstPic = photosList[0].data['firstPhoto'] : firstPic = addPhotoUrl;
     succeed ? secondPic = photosList[0].data['secondaryPhoto'] : secondPic = addPhotoUrl;
-    print(selfie);
-    print(firstPic);
-    print(secondPic);
     apples = [
       selfie,
       firstPic,
@@ -205,10 +205,20 @@ class _profileCardState extends State<profileCard1> {
                     color: Colors.white,
                     size: 40.0,),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => mainPage()),
+                    var route = new MaterialPageRoute(
+                        builder: (BuildContext context) =>
+                        new mainPage(school: school,
+                            currentUserUid: uid,
+                            primaryColorValue: colorPrimary)
                     );
+                    Navigator.of(context).push(route);
+
+//                    Navigator.push(
+//                      context,
+//                      MaterialPageRoute(builder: (context) => mainPage()),
+//                    );
+
+
                   })
 
             ],
@@ -273,14 +283,19 @@ class _profileCardState extends State<profileCard1> {
   }
 
   _timestampDifference() {
-    final CurrentTimestamp = new DateTime.now().millisecondsSinceEpoch;
+    final currentTimestamp = new DateTime.now().millisecondsSinceEpoch;
     int timestampDifference;
-    timestampDifference = CurrentTimestamp - timestamp;
+    timestampDifference = currentTimestamp - timestamp;
 
-    print("timestamp diff: $timestampDifference");
+//    print("timestamp diff: $timestampDifference");
+//
+//    print("hasThreePhotos: $hasThreePhotos");
+//
+//    print("apples[]   ${apples[0]}, ${apples[1]}, ${apples[2]}");
 
-      if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
-        if(timestampDifference > 0 && timestampDifference <= 86400000) {
+    if(hasThreePhotos == "no") {
+      if(apples[0] == addPhotoUrl || apples[1] == addPhotoUrl || apples[2] == addPhotoUrl) {
+        if(timestampDifference >= 0 && timestampDifference <= 86400000) {
           return 'You Have 3 Days To Upload New Photos Or Else You Cannot View Profiles';
         } else if (timestampDifference <= 172800000) {
           return 'You Have 2 Days To Upload New Photos Or Else You Cannot View Profiles';
@@ -288,95 +303,36 @@ class _profileCardState extends State<profileCard1> {
           return 'You Have 1 Day To Upload New Photos Or Else You Cannot View Profiles';
         } else if (timestampDifference <= 345600000) {
           return 'It Is Your Last Day To Upload New Photos Or Else You Cannot View Profiles';
-        } else if (timestampDifference > 345600000 || timestampDifference == 0) {
-          return 'You Must Wait Until The Start Of Next Month To Be A Contender';
+        } else {
+          // Todo must add no swiping on users funtionality
+
+          return 'You Must Upload Photos To View Profiles';
         }
+      } else {
+        updateHasThreePhotos();
+        return '';
       }
+    } else {
+      return '';
+    }
+  }
+
+  _timestampDifferenceInt() {
+    final currentTimestamp = new DateTime.now().millisecondsSinceEpoch;
+    int timestampDifference;
+    timestampDifference = currentTimestamp - timestamp;
+
+    if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
+      if (timestampDifference > 345600000) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
   }
 
 
   Widget _uploadPhotosText() {
-//    final currentTimestamp = new DateTime.now().millisecondsSinceEpoch;
-//    int timestampDifference;
-//    succeed ? timestampDifference = currentTimestamp - timestamp : timestampDifference = 0;
-//
-//    print("_uploadPhotosText timestamp diff: $timestampDifference");
-//
-//    if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
-//
-//      if(timestampDifference > 0 && timestampDifference <= 86400000) {
-//        return new Container(
-//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
-//          alignment: Alignment.bottomCenter,
-//          child: new Text(
-//              'You Have 3 Days To Upload New Photos Or Else You Cannot View Profiles',
-//              textAlign: TextAlign.center,
-//              style: new TextStyle(
-//                fontSize: 20.0,
-//                fontFamily: 'Gelio',
-//                color: Colors.white,
-//              )
-//          ),
-//        );
-//      } else if (timestampDifference <= 172800000) {
-//        return new Container(
-//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
-//          alignment: Alignment.bottomCenter,
-//          child: new Text(
-//              'You Have 2 Days To Upload New Photos Or Else You Cannot View Profiles',
-//              textAlign: TextAlign.center,
-//              style: new TextStyle(
-//                fontSize: 20.0,
-//                fontFamily: 'Gelio',
-//                color: Colors.white,
-//              )
-//          ),
-//        );
-//      } else if (timestampDifference <= 259200000) {
-//        return new Container(
-//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
-//          alignment: Alignment.bottomCenter,
-//          child: new Text(
-//              'You Have 1 Days To Upload New Photos Or Else You Cannot View Profiles',
-//              textAlign: TextAlign.center,
-//              style: new TextStyle(
-//                fontSize: 20.0,
-//                fontFamily: 'Gelio',
-//                color: Colors.white,
-//              )
-//          ),
-//        );
-//      } else if (timestampDifference <= 345600000) {
-//        return new Container(
-//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
-//          alignment: Alignment.bottomCenter,
-//          child: new Text(
-//              'It Is Your Last Day To Upload New Photos Or Else You Cannot View Profiles',
-//              textAlign: TextAlign.center,
-//              style: new TextStyle(
-//                fontSize: 20.0,
-//                fontFamily: 'Gelio',
-//                color: Colors.red,
-//              )
-//          ),
-//        );
-//      } else if (timestampDifference > 345600000 || timestampDifference == 0) {
-//        return new Container(
-//          padding: EdgeInsets.fromLTRB(30.0, 00.0, 30.0, 50.0),
-//          alignment: Alignment.bottomCenter,
-//          child: new Text(
-//              'You Must Wait Until The Start Of Next Month To Be A Contender',
-//              textAlign: TextAlign.center,
-//              style: new TextStyle(
-//                fontSize: 20.0,
-//                fontFamily: 'Gelio',
-//                color: Colors.transparent,
-//              )
-//          ),
-//        );
-//      }
-//    }
-
     return new Container(
       padding: EdgeInsets.fromLTRB(50.0, 00.0, 50.0, 28.0),
       alignment: Alignment.bottomCenter,
@@ -422,12 +378,11 @@ class _profileCardState extends State<profileCard1> {
           backgroundColor: Colors.white,
         ),
       );
-    };
+    }
   }
 
   void getLists() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
-    print("USER UID: ${user.uid}");
     collectionReference = Firestore.instance.collection("users").document("${user.uid}").collection("photos");
     userReference = Firestore.instance.collection("users").document("${user.uid}").snapshots();
 
@@ -440,6 +395,9 @@ class _profileCardState extends State<profileCard1> {
     userListSubscription = userReference.listen((datasnapshot) {
       setState(() {
         name = datasnapshot.data['name'];
+        school = datasnapshot.data['school'];
+        uid = user.uid;
+        hasThreePhotos = datasnapshot.data['hasThreePhotos'];
         colorPrimary = datasnapshot.data['colorPrimary'];
         colorSecondary = datasnapshot.data['colorSecondary'];
         timestamp = datasnapshot.data['timestamp'];
@@ -448,11 +406,12 @@ class _profileCardState extends State<profileCard1> {
         } else {
           rank = "";
         }
-        print("name : $name");
-        print("colorPrimary : $colorPrimary");
-        print("c0p0r_r8kary : $colorSecondary");
-        print("name : $timestamp");
-        print("name : $rank");
+
+//        print("name : $name");
+//        print("colorPrimary : $colorPrimary");
+//        print("c0p0r_r8kary : $colorSecondary");
+//        print("name : $timestamp");
+//        print("name : $rank");
         succeed = true;
       });
     });
@@ -521,7 +480,7 @@ class _profileCardState extends State<profileCard1> {
       _image = cameraImage;
     });
     if(_image != null) {
-      _uploadImageToFirebase(_image);
+      _uploadImageToFirebase(_image, _timestampDifferenceInt());
     } else {
       showDialog(
           context: context,
@@ -540,7 +499,7 @@ class _profileCardState extends State<profileCard1> {
               ]
           )
       );
-    };
+    }
   }
 
   Future getImageGallery() async {
@@ -550,7 +509,7 @@ class _profileCardState extends State<profileCard1> {
       _image = cameraImage;
     });
     if(_image != null) {
-      _uploadImageToFirebase(_image);
+      _uploadImageToFirebase(_image, _timestampDifferenceInt());
     } else {
       showDialog(
           context: context,
@@ -569,7 +528,7 @@ class _profileCardState extends State<profileCard1> {
               ]
           )
       );
-    };
+    }
   }
 
   void _isUserLoggedIn() {
@@ -584,8 +543,40 @@ class _profileCardState extends State<profileCard1> {
       } else {
         isLoggedIn = true;
         getLists();
-      };
+      }
     });
+  }
+
+  void updateHasThreePhotos() async {
+    FirebaseUser user = await FirebaseAuth.instance.currentUser();
+    final userReference = Firestore.instance.collection("users");
+    final schoolReference = Firestore.instance.collection("schools");
+
+    Map<String, String> usersUidData = <String, String>{
+      "hasThreePhotos" : "yes",
+    };
+
+    Map<String, String> profileUidData = <String, String>{
+      "name" : name,
+      "uid" : "${user.uid}",
+    };
+
+    Map<String, String> usersPhotosUidData = <String, String>{
+      "firstPhoto" : "${apples[1]}",
+      "secondaryPhoto" : "${apples[2]}",
+      "selfie" : "${apples[0]}",
+    };
+
+    userReference.document("${user.uid}").updateData(usersUidData).whenComplete(() {
+    }).catchError((e) => print(e));
+
+    schoolReference.document(school).collection("profiles").document("${user.uid}").setData(profileUidData).whenComplete(() {
+    }).catchError((e) => print(e));
+
+    schoolReference.document(school).collection("profiles").document("${user.uid}").collection("photos").document("photosDoc").setData(usersPhotosUidData).whenComplete(() {
+    }).catchError((e) => print(e));
+
+
   }
 }
 
@@ -750,7 +741,7 @@ class SelectedPhotoIndicator extends StatelessWidget {
   List<Widget> _buildIndicators() {
     List<Widget> indicators = [];
     for (int i = 0; i < photoCount; ++i) {
-      print(i);
+//      print(i);
       indicators.add(i == visiblePhotoIndex
           ? _buildActiveIndicators()
           : _buildInactiveIndicators());
@@ -769,7 +760,7 @@ class SelectedPhotoIndicator extends StatelessWidget {
   }
 }
 
-Future _uploadImageToFirebase(File _image) async {
+Future _uploadImageToFirebase(File _image, int timestampExpired) async {
   final userReference = Firestore.instance.collection("users");
   var succeed = true;
   var fileName;
@@ -786,7 +777,7 @@ Future _uploadImageToFirebase(File _image) async {
   } else if (visiblePhotoIndex == 2) {
     fileName = "SecondaryPhoto.jpeg";
     photoPath = "secondaryPhoto";
-  };
+  }
 
   StorageUploadTask putFile = _storage.ref().child("userPhotos/${user.uid}/$fileName").putFile(_image);
 
@@ -802,14 +793,18 @@ Future _uploadImageToFirebase(File _image) async {
       };
 
       userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(photoUrl).whenComplete(() {
-        print("Photo Added");
       }).catchError((e) => print(e));
 
 
       //todo if users have all three photos in a timely manner add to school
 
-//      final schoolReference = Firestore.instance.collection("schools");
+      if(timestampExpired == 0 ) {
 
+      }
+
+
+//      final schoolReference = Firestore.instance.collection("schools");
+//
 //      schoolReference.document("$happy").collection("profiles").document("${user.uid}").setData(seflieUrl).whenComplete(() {
 //        print("Profile Selfie Added");
 //      }).catchError((e) => print(e));

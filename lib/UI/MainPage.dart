@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:stone_actual/UI/profiles.dart';
@@ -8,7 +9,8 @@ import './User_Profile.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
+String currentSchool;
+int uidCount = 0;
 
 final MatchEngine matchEngine = new MatchEngine(
   matches: demoProfiles.map((Profile profile) {
@@ -21,10 +23,12 @@ final MatchEngine matchEngine = new MatchEngine(
 class CardStack extends StatefulWidget {
   final MatchEngine matchEngine;
   String value;
+  String school;
+  String currentUserUid;
   Color primary;
   Color secondary;
 
-  CardStack({Key key, this.value, this.primary, this.secondary, this.matchEngine})
+  CardStack({Key key, this.school, this.currentUserUid, this.matchEngine})
       : super(key: key);
 
   @override
@@ -35,23 +39,12 @@ class _CardStackState extends State<CardStack> {
   Key _frontCard;
   DateMatch _currentMatch;
   double _nextCardScale = 0.9;
-  StreamSubscription<QuerySnapshot> subscription;
-  List<DocumentSnapshot> wallpapersList;
-  final CollectionReference collectionReference =
-  Firestore.instance.collection("wallpapers");
-
-  final DocumentReference documentReference =
-  Firestore.instance.document("wallpapers/D93JTZ9NfIGWGKLhFBxe");
 
 
   @override
   void initState() {
     super.initState();
-    subscription = collectionReference.snapshots().listen((datasnapshot) {
-      setState(() {
-        wallpapersList = datasnapshot.documents;
-      });
-    });
+
     widget.matchEngine.addListener(_onMatchEngineChange);
 
     _currentMatch = widget.matchEngine.currentMatch;
@@ -83,7 +76,6 @@ class _CardStackState extends State<CardStack> {
     if (_currentMatch != null) {
       _currentMatch.removeListener(_onMatchChange);
     }
-    subscription?.cancel();
 
     //widget.matchEngine.removeListener(_onMatchEngine);
     super.dispose();
@@ -104,26 +96,30 @@ class _CardStackState extends State<CardStack> {
   }
 
   void _onMatchChange() {
-    setState(() {});
+    setState(() {
+      print("huh");
+    });
   }
 
   Widget _buildBackCard() {
     return new Transform(
       transform: new Matrix4.identity()..scale(_nextCardScale, _nextCardScale),
       alignment: Alignment.center,
-      child: new profileCard(
-        primary: widget.primary,
-        secondary: widget.secondary,
-        value: widget.value,
-        profile: widget.matchEngine.nextMatch.profile,
+      child: new ProfileCard(
+//        primary: widget.primary,
+//        secondary: widget.secondary,
+//        value: widget.value,
+//        profile: widget.matchEngine.nextMatch.profile,
       ),
     );
   }
 
   Widget _buildFrontCard() {
-    return new profileCard(
+    return new ProfileCard(
       key: _frontCard,
-      profile: widget.matchEngine.currentMatch.profile,
+//      profile: widget.matchEngine.currentMatch.profile,
+      school: widget.currentUserUid,
+      currentUserUid: widget.currentUserUid,
     );
   }
 
@@ -132,7 +128,6 @@ class _CardStackState extends State<CardStack> {
       case Decision.nope:
         return SlideDirection.left;
       case Decision.like:
-        wallpapersList[0].data['nope'] = false;
         return SlideDirection.right;
       default:
         return null;
@@ -188,12 +183,11 @@ class _CardStackState extends State<CardStack> {
 }
 
 class mainPage extends StatefulWidget {
-  String value;
-  Color primary;
-  Color secondary;
-  String firstpic;
+  String school;
+  String currentUserUid;
+  int primaryColorValue;
 
-  mainPage({Key key, this.value,this.firstpic, this.primary, this.secondary})
+  mainPage({Key key, this.school, this.currentUserUid, this.primaryColorValue})
       : super(key: key);
   @override
   _mainPageState createState() => _mainPageState();
@@ -405,6 +399,8 @@ class _DraggableCardState extends State<DraggableCard>
 
         slideOutDirection =
         isInNopeRegion ? SlideDirection.left : SlideDirection.right;
+        ++uidCount;
+        print("increment counter: $uidCount");
       } else {
         slideBackStart = cardOffset;
         slideBackAnimation.forward(from: 0.0);
@@ -451,9 +447,11 @@ class _mainPageState extends State<mainPage> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      backgroundColor: widget.primary,
+      backgroundColor: Colors.white,
       body: CardStack(
         matchEngine: matchEngine,
+        school: widget.school,
+        currentUserUid: widget.currentUserUid
       ),
     );
   }
@@ -487,59 +485,149 @@ class _mainPageState extends State<mainPage> {
 //  }
 //}
 
-class profileCard extends StatefulWidget {
+//todo shit here bruh
+class ProfileCard extends StatefulWidget {
   final Profile profile;
-  final profileCard profilecard;
-  String name;
-  String value;
-  Color primary;
-  Color secondary;
+  final ProfileCard profilecard;
+  String school;
+  String currentUserUid;
   List<String> image;
-  final DataSnapshot messageSnapshot;
   bool swipe;
 
 
 
-  profileCard({
+  ProfileCard({
     Key key,
-    this.name,
-    this.profilecard,
-    this.image,
-    this.messageSnapshot,
-    this.value,
-    this.primary,
-    this.secondary,
-    this.profile,
+    this.school,
+    this.currentUserUid,
   }) : super(key: key);
   @override
   _profileCardState createState() => _profileCardState();
 }
 
-class _profileCardState extends State<profileCard> {
+class _profileCardState extends State<ProfileCard> {
   StreamSubscription<QuerySnapshot> subscription;
   List<DocumentSnapshot> wallpapersList;
-  final CollectionReference collectionReference =
-  Firestore.instance.collection("users");
+//  final CollectionReference collectionReference = Firestore.instance.collection("schools").document(school).collection();
   Color primarySchoolColor;
   Color secondarySchoolColor;
   String happy;
   bool swipe;
+  bool succeed = false;
+  List<DocumentSnapshot> photosList;
+  List<DocumentSnapshot> userList;
+//  FirebaseUser user;
+  CollectionReference collectionReference;
+  Stream<DocumentSnapshot> userReference;
+  List<String> apples;
+
+  final String addPhotoUrl = "https://vignette.wikia.nocookie.net/konosuba/images/4/4f/Megumin_1.jpg/revision/latest?cb=20180502131754";
 
 
+  void getLists(String uid) async {
+//    FirebaseUser user = await FirebaseAuth.instance.currentUser();
+
+//    if(uid == null) {
+//      uid = addPhotoUrl;
+//    }
+
+    collectionReference = Firestore.instance.collection("users").document(uid).collection("photos");
+//    userReference = Firestore.instance.collection("users").document("${widget.currentUserUid}").snapshots();
+
+    subscription = collectionReference.snapshots().listen((datasnapshot) {
+      setState(() {
+        photosList = datasnapshot.documents;
+        succeed = true;
+      });
+    });
+
+  }
+
+//  void getUids() async {
+//    QuerySnapshot querySnapshot = await Firestore.instance.collection("schools").document(widget.school).collection("profiles").getDocuments();
+//    var list = querySnapshot.documents;
+//    print(list);
+//  }
+
+  void getUids() async {
+
+    final userReference = Firestore.instance.collection("users");
+    List<DocumentSnapshot> wallpapersList;
+
+    userReference.snapshots().listen((datasnapshot) {
+      setState(() {
+        wallpapersList = datasnapshot.documents;
+
+//        print(wallpapersList);
+
+//        if(wallpapersList[uidCount].documentID == null) {
+//          getUids();
+//        }
+
+        if(wallpapersList[uidCount].documentID != widget.currentUserUid) {
+          getLists(wallpapersList[uidCount].documentID);
+        } else if(wallpapersList[uidCount].documentID == widget.currentUserUid ) {
+          print("current user uid");
+            ++uidCount;
+            getUids();
+        } else {
+          print("end of profiles");
+        }
 
 
+//        wallpapersList.forEach((uid) {
+//          print("heh? ${uid.documentID}");
+//          if(uid.documentID[uidCount] != widget.currentUserUid) {
+//            print("ooooooooo: ${uid.documentID}");
+////            getWallpaperList(uid.documentID);
+//            getLists(uid.documentID);
+////            ++uidCount;
+////            print("running $uidCount");
+//          } else {
+//            print("I Dont Know ${wallpapersList[1].documentID}");
+//            ++uidCount;
+//            getUids();
+//          }
+//        });
+
+
+      });
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    subscription = collectionReference.snapshots().listen((datasnapshot) {
-      setState(() {
-        wallpapersList = datasnapshot.documents;
-      });
-    });
 
+//    final schoolReference = Firestore.instance.collection("schools").document("${widget.school}").collection("profiles").document("Th4uuyq9U8NxDdJl7CDDmq17NvJ2").collection("photos");
+//
+//    print(schoolReference);
+//
+//    subscription = schoolReference.snapshots().listen((datasnapshot) {
+//      setState(() {
+//        wallpapersList = datasnapshot.documents;
+//      });
+//    });
+
+//    getLists();
+    getUids();
     // _currentScreen();
   }
+
+  //todo clean this
+//  void getWallpaperList(String uid) {
+//    print("the uid: $uid");
+//    final schoolReference = Firestore.instance.collection("schools").document("${widget.school}").collection("profiles").document("${widget.currentUserUid}").collection("photos");
+//
+////    CollectionReference uidSon = Firestore.instance.collection("schools").document("${widget.school}").collection("profiles");
+//
+//    subscription = schoolReference.snapshots().listen((datasnapshot) {
+//      setState(() {
+//        photosList = datasnapshot.documents;
+//      });
+//    });
+//  }
+
 
   @override
   void dispose() {
@@ -550,33 +638,23 @@ class _profileCardState extends State<profileCard> {
 
   Widget _buildBackground() {
 
-    List<String> apples;
-    List<String> noUser = [
-      'images/Rory.jpg',
+    String selfie;
+    String firstPic;
+    String secondPic;
+    succeed ? selfie = photosList[0].data['selfie'] : selfie = addPhotoUrl;
+    succeed ? firstPic = photosList[0].data['firstPhoto'] : firstPic = addPhotoUrl;
+    succeed ? secondPic = photosList[0].data['secondaryPhoto'] : secondPic = addPhotoUrl;
+    apples = [
+      selfie,
+      firstPic,
+      secondPic
     ];
-    String img;
-    String img1;
-    for(var i = 0; i < 3; i++){
-//      if(wallpapersList[i].data['nope'] == true) {
-        img1 = wallpapersList[i].data['selfie'];
-//        img = wallpapersList[i].data['url2'];
-        apples = [
-          img1,
-//          img
-        ];
-        return new PhotoBrowser(
-          photoAssetPaths: apples,
-          visiblePhotoIndex: 0,
-        );
-//      }
-//      else {
-//        print('no users left');
-//        return new PhotoBrowser(
-//          photoAssetPaths: noUser,
-//          visiblePhotoIndex: 0,
-//        );
-//      }
-    }
+
+    return new PhotoBrowser(
+      photoAssetPaths: apples,
+      visiblePhotoIndex: 0,
+    );
+
   }
 
 
@@ -625,12 +703,9 @@ class _profileCardState extends State<profileCard> {
                             color: Colors.white,
                           ),
                           onPressed: (){
-                            primarySchoolColor = widget.primary;
-                            secondarySchoolColor = widget.secondary;
-                            happy = widget.value;
                             var route = new MaterialPageRoute(
                                 builder: (BuildContext context) =>
-                                new userProfiles12(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
+                                new userProfiles12()
                             );
                             Navigator.of(context).push(route);
                           })
@@ -695,21 +770,14 @@ class PhotoBrowser extends StatefulWidget {
 
 class _PhotoBrowserState extends State<PhotoBrowser> {
   //StorageReference reference = FirebaseDatabase.instance.reference().child('users');
-  StreamSubscription<QuerySnapshot> subscription;
-  List<DocumentSnapshot> wallpapersList;
-  final CollectionReference collectionReference =
-  Firestore.instance.collection("wallpapers");
 
   int visiblePhotoIndex;
 
   @override
   void initState() {
     super.initState();
-    visiblePhotoIndex = widget.visiblePhotoIndex;subscription = collectionReference.snapshots().listen((datasnapshot) {
-      setState(() {
-        wallpapersList = datasnapshot.documents;
-      });
-    });
+    visiblePhotoIndex = widget.visiblePhotoIndex;
+
 
   }
 
@@ -776,18 +844,13 @@ class _PhotoBrowserState extends State<PhotoBrowser> {
     return new Stack(
       fit: StackFit.expand,
       children: <Widget>[
-//        new Hero(
-//            tag: widget.photoAssetPaths,
-//            child: new FadeInImage(
-//                placeholder: new AssetImage("images/Rory3.jpg"),
-//                image: new NetworkImage(widget.photoAssetPaths),
-//                fit: BoxFit.cover,
-//            )
-//        ),
-
-        new Image.network(
-          widget.photoAssetPaths[visiblePhotoIndex],
-          fit: BoxFit.cover,
+        new Hero(
+            tag: widget.photoAssetPaths,
+            child: new FadeInImage(
+                placeholder: new AssetImage("images/Rory3.jpg"),
+                image: new NetworkImage(widget.photoAssetPaths[visiblePhotoIndex]),
+                fit: BoxFit.cover,
+            )
         ),
 //        new StaggeredGridView.countBuilder(
 //          padding: const EdgeInsets.all(8.0),

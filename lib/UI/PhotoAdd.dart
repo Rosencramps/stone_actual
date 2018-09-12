@@ -83,7 +83,6 @@ class _photoAddState extends State<photoAdd> {
 
   Future _uploadImageToFirebase() async {
     final userReference = Firestore.instance.collection("users");
-    final schoolReference = Firestore.instance.collection("schools");
     var succeed = true;
     var fileName = "PhotoSelfie.jpeg";
 
@@ -102,10 +101,6 @@ class _photoAddState extends State<photoAdd> {
 
         userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(seflieUrl).whenComplete(() {
           print("User Selfie Added");
-        }).catchError((e) => print(e));
-
-        schoolReference.document("$happy").collection("profiles").document("${user.uid}").setData(seflieUrl).whenComplete(() {
-          print("Profile Selfie Added");
         }).catchError((e) => print(e));
 
         var route = new MaterialPageRoute(
