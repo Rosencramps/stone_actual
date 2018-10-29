@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import './UI/Settings.dart';
-import './UI/Start&Colors.dart';
-import './UI/User_Profile.dart';
-import './iDontGiveAFuck.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_database/firebase_database.dart';
-import './UI/MainPage.dart';
+import 'package:stone_actual/UI/User_Profile.dart';
 
 void main() {
   runApp(new MaterialApp(

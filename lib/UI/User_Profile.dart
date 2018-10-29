@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-//import './profile1.dart';
-import './Profiles.dart';
 import './Settings.dart';
 import './MainPage.dart';
 import './Start&Colors.dart';
 import './LeaderboardPage.dart';
-//import './photo.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 var succeed = false;
 final FirebaseStorage _storage = FirebaseStorage.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 int visiblePhotoIndex;
+String gender;
+String sex;
 
 class userProfiles12 extends StatefulWidget {
-  final Profile profile;
   String value;
   Color primary;
   Color secondary;
@@ -31,7 +31,6 @@ class userProfiles12 extends StatefulWidget {
     this.value,
     this.primary,
     this.secondary,
-    this.profile,
   }) : super(key: key);
   @override
   _UserProfilesState createState() => _UserProfilesState();
@@ -76,7 +75,6 @@ class ShadowText extends StatelessWidget {
 }
 
 class profileCard1 extends StatefulWidget {
-  final Profile profile;
   String value;
   Color primary;
   Color secondary;
@@ -86,7 +84,6 @@ class profileCard1 extends StatefulWidget {
     this.value,
     this.primary,
     this.secondary,
-    this.profile,
   }) : super(key: key);
   @override
   _ProfileCardState createState() => _ProfileCardState();
@@ -112,7 +109,7 @@ class _ProfileCardState extends State<profileCard1> {
   int colorSecondary;
   int timestamp;
   String rank;
-  List<String> apples;
+  List<String> userPhotos;
   File _image;
 
   @override
@@ -121,18 +118,19 @@ class _ProfileCardState extends State<profileCard1> {
 
     _isUserLoggedIn();
 
-//    if(_auth.currentUser() == null) {
-//      var route = new MaterialPageRoute(
-//          builder: (BuildContext context) => new userProfiles12(
-//          )
-//      );
-//      Navigator.of(context).push(route);
-//    };
+    if(_auth.currentUser() == null) {
+      var route = new MaterialPageRoute(
+          builder: (BuildContext context) => new userProfiles12(
+          )
+      );
+      Navigator.of(context).push(route);
+    };
 //
 //    getLists();
 
     // _currentScreen();
   }
+
 
   @override
   void dispose() {
@@ -147,14 +145,14 @@ class _ProfileCardState extends State<profileCard1> {
     succeed ? selfie = photosList[0].data['selfie'] : selfie = addPhotoUrl;
     succeed ? firstPic = photosList[0].data['firstPhoto'] : firstPic = addPhotoUrl;
     succeed ? secondPic = photosList[0].data['secondaryPhoto'] : secondPic = addPhotoUrl;
-    apples = [
+    userPhotos = [
       selfie,
       firstPic,
       secondPic
     ];
 
       return new PhotoBrowser(
-        photoAssetPaths: apples,
+        photoAssetPaths: userPhotos,
         visiblePhotoIndex: 0,
       );
   }
@@ -207,9 +205,10 @@ class _ProfileCardState extends State<profileCard1> {
                   onPressed: () {
                     var route = new MaterialPageRoute(
                         builder: (BuildContext context) =>
-                        new mainPage(school: school,
-                            currentUserUid: uid,
-                            primaryColorValue: colorPrimary)
+//                        new mainPage(school: school,
+//                            currentUserUid: uid,
+//                            primaryColorValue: colorPrimary)
+                        new mainPage()
                     );
                     Navigator.of(context).push(route);
 
@@ -294,7 +293,7 @@ class _ProfileCardState extends State<profileCard1> {
 //    print("apples[]   ${apples[0]}, ${apples[1]}, ${apples[2]}");
 
     if(hasThreePhotos == "no") {
-      if(apples[0] == addPhotoUrl || apples[1] == addPhotoUrl || apples[2] == addPhotoUrl) {
+      if(userPhotos[0] == addPhotoUrl || userPhotos[1] == addPhotoUrl || userPhotos[2] == addPhotoUrl) {
         if(timestampDifference >= 0 && timestampDifference <= 86400000) {
           return 'You Have 3 Days To Upload New Photos Or Else You Cannot View Profiles';
         } else if (timestampDifference <= 172800000) {
@@ -313,7 +312,7 @@ class _ProfileCardState extends State<profileCard1> {
         return '';
       }
     } else {
-      return '';
+      return ' ';
     }
   }
 
@@ -322,7 +321,7 @@ class _ProfileCardState extends State<profileCard1> {
     int timestampDifference;
     timestampDifference = currentTimestamp - timestamp;
 
-    if(apples[0] != addPhotoUrl && apples[1] != addPhotoUrl && apples[2] != addPhotoUrl) {
+    if(userPhotos[0] != addPhotoUrl && userPhotos[1] != addPhotoUrl && userPhotos[2] != addPhotoUrl) {
       if (timestampDifference > 345600000) {
         return 1;
       } else {
@@ -382,9 +381,21 @@ class _ProfileCardState extends State<profileCard1> {
   }
 
   void getLists() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    sex = prefs.getString('Sex') ?? " ";
+
+
+
+    if(sex == 'M') {
+      gender = "males";
+    } else {
+      gender = "females";
+    }
+
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
-    collectionReference = Firestore.instance.collection("users").document("${user.uid}").collection("photos");
-    userReference = Firestore.instance.collection("users").document("${user.uid}").snapshots();
+    collectionReference = Firestore.instance.collection("users").document(gender).collection("profiles").document("${user.uid}").collection("photos");
+    userReference = Firestore.instance.collection("users").document(gender).collection("profiles").document("${user.uid}").snapshots();
 
     subscription = collectionReference.snapshots().listen((datasnapshot) {
       setState(() {
@@ -395,6 +406,7 @@ class _ProfileCardState extends State<profileCard1> {
     userListSubscription = userReference.listen((datasnapshot) {
       setState(() {
         name = datasnapshot.data['name'];
+//        sex = datasnapshot.data['sex'];
         school = datasnapshot.data['school'];
         uid = user.uid;
         hasThreePhotos = datasnapshot.data['hasThreePhotos'];
@@ -562,19 +574,34 @@ class _ProfileCardState extends State<profileCard1> {
     };
 
     Map<String, String> usersPhotosUidData = <String, String>{
-      "firstPhoto" : "${apples[1]}",
-      "secondaryPhoto" : "${apples[2]}",
-      "selfie" : "${apples[0]}",
+      "firstPhoto" : "${userPhotos[1]}",
+      "secondaryPhoto" : "${userPhotos[2]}",
+      "selfie" : "${userPhotos[0]}",
     };
 
-    userReference.document("${user.uid}").updateData(usersUidData).whenComplete(() {
-    }).catchError((e) => print(e));
+//    userReference.document("${user.uid}").updateData(usersUidData).whenComplete(() {
+//    }).catchError((e) => print(e));
 
-    schoolReference.document(school).collection("profiles").document("${user.uid}").setData(profileUidData).whenComplete(() {
-    }).catchError((e) => print(e));
+    if(sex == 'M') {
+      userReference.document("males").collection("profiles").document("${user.uid}").updateData(usersUidData).whenComplete(() {
+      }).catchError((e) => print(e));
 
-    schoolReference.document(school).collection("profiles").document("${user.uid}").collection("photos").document("photosDoc").setData(usersPhotosUidData).whenComplete(() {
-    }).catchError((e) => print(e));
+      schoolReference.document(school).collection("males").document("${user.uid}").setData(profileUidData).whenComplete(() {
+      }).catchError((e) => print(e));
+
+      schoolReference.document(school).collection("males").document("${user.uid}").collection("photos").document("photosDoc").updateData(usersPhotosUidData).whenComplete(() {
+      }).catchError((e) => print(e));
+
+    } else if(sex == 'F') {
+      userReference.document("females").collection("profiles").document("${user.uid}").updateData(usersUidData).whenComplete(() {
+      }).catchError((e) => print(e));
+
+      schoolReference.document(school).collection("females").document("${user.uid}").setData(profileUidData).whenComplete(() {
+      }).catchError((e) => print(e));
+
+      schoolReference.document(school).collection("females").document("${user.uid}").collection("photos").document("photosDoc").updateData(usersPhotosUidData).whenComplete(() {
+      }).catchError((e) => print(e));
+    }
 
 
   }
@@ -653,18 +680,34 @@ class _PhotoBrowserState extends State<PhotoBrowser> {
 
   @override
   Widget build(BuildContext context) {
+//    if(succeed = true) {
+//      new CachedNetworkImage(
+//        imageUrl: "http://via.placeholder.com/350x150",
+//        placeholder: new CircularProgressIndicator(),
+//        errorWidget: new Icon(Icons.error),
+//      );
+//    }
     return new Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        widget.photoAssetPaths[visiblePhotoIndex] != null ?
-        new FadeInImage(
-            fit: BoxFit.cover,
-            placeholder: new AssetImage('images/StoneLightGrey.png'),
-            image: new NetworkImage(widget.photoAssetPaths[visiblePhotoIndex]))
-        : new CircularProgressIndicator(),
-//        new Image.network(
-//          widget.photoAssetPaths[visiblePhotoIndex],
-//          fit: BoxFit.cover,
+//        widget.photoAssetPaths[visiblePhotoIndex] != null ?
+//        new FadeInImage(
+//            fit: BoxFit.cover,
+//            placeholder: new AssetImage('images/StoneLightGrey.png'),
+//            image: new CachedNetworkImageProvider(widget.photoAssetPaths[visiblePhotoIndex]))
+    new CachedNetworkImage(
+      imageUrl: widget.photoAssetPaths[visiblePhotoIndex],
+      fit: BoxFit.cover,
+//      placeholder: Image.asset('StoneLightGrey'),
+//      errorWidget: new Icon(Icons.error),
+    ),
+//        : new CircularProgressIndicator(),
+
+//        new Image(
+//          image: new CachedNetworkImageProvider(widget.photoAssetPaths[1]),
+//        ),
+//        new Image(
+//          image: new CachedNetworkImageProvider(widget.photoAssetPaths[2]),
 //        ),
         new Positioned(
           top: 0.0,
@@ -681,6 +724,7 @@ class _PhotoBrowserState extends State<PhotoBrowser> {
 //            visiblePhotoIndex: visiblePhotoIndex,
 //          ),
         ),
+
         _buildPhotoControls(),
       ],
     );
@@ -792,7 +836,9 @@ Future _uploadImageToFirebase(File _image, int timestampExpired) async {
         photoPath : "$downloadUrl",
       };
 
-      userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(photoUrl).whenComplete(() {
+      print("BIG DOINKS $gender");
+
+      userReference.document(gender).collection("profiles").document("${user.uid}").collection("photos").document("photosDoc").updateData(photoUrl).whenComplete(() {
       }).catchError((e) => print(e));
 
 

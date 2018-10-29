@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseDatabase _database = FirebaseDatabase.instance;
 final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -89,6 +89,7 @@ class _CreateUserState extends State<createUser> {
                     if (sex != "M") {
                       sex = "M";
                       _buttonPressed();
+                      _saveSharedPref();
                     }
                   },
                   color: _pressed ? mButtonColor : mButtonColor.withOpacity(
@@ -112,6 +113,7 @@ class _CreateUserState extends State<createUser> {
                     if (sex != "F") {
                       sex = "F";
                       _buttonPressed();
+                      _saveSharedPref();
                     }
                   },
                   color: _pressed
@@ -214,6 +216,18 @@ class _CreateUserState extends State<createUser> {
     );
   }
 
+  _saveSharedPref() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    prefs.setString('Sex', sex);
+
+    if(sex == 'F') {
+      prefs.setString('PrefGender', "males");
+    } else {
+      prefs.setString('PrefGender', "females");
+    }
+  }
+
   Future _createUser() async {
     var succeed = true;
     await _auth.createUserWithEmailAndPassword(
@@ -275,12 +289,19 @@ class _CreateUserState extends State<createUser> {
   Future saveUserFirebase() async {
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
     final timestamp = new DateTime.now().millisecondsSinceEpoch;
+    String gender;
 
-    final userReference = Firestore.instance.collection("users");
+    if(sex == 'M') {
+      gender = "males";
+    } else {
+      gender = "females";
+    }
+
+    final userReference = Firestore.instance.collection("users").document(gender).collection("profiles");
 
     Map<String, String> usersUidData = <String, String>{
-      "colorPrimary" : primarySchoolColor.value.toString(),
-      "colorSecondary" : secondarySchoolColor.value.toString(),
+//      "colorPrimary" : primarySchoolColor.value.toString(),
+//      "colorSecondary" : secondarySchoolColor.value.toString(),
       "hasThreePhotos" : "no",
       "name" : firstNameInput.text,
       "school" : happy,

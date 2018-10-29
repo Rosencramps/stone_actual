@@ -10,6 +10,7 @@ import './User_Profile.dart';
 import 'dart:convert';
 import 'package:http/http.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final FirebaseStorage _storage = FirebaseStorage.instance;
 
@@ -85,6 +86,19 @@ class _photoAddState extends State<photoAdd> {
     final userReference = Firestore.instance.collection("users");
     var succeed = true;
     var fileName = "PhotoSelfie.jpeg";
+    final prefs = await SharedPreferences.getInstance();
+
+    sex = prefs.getString('Sex') ?? " ";
+    String gender;
+
+    if(sex == 'M') {
+      gender = "males";
+    } else if(sex == 'F'){
+      gender = "females";
+    }
+
+    print("SEX : $sex");
+    print("GENDER : $gender");
 
     FirebaseUser user = await FirebaseAuth.instance.currentUser();
     StorageUploadTask putFile = _storage.ref().child("userPhotos/${user.uid}/$fileName").putFile(_image);
@@ -96,19 +110,22 @@ class _photoAddState extends State<photoAdd> {
         final downloadUrl = await _storage.ref().child('userPhotos').child(user.uid).child('PhotoSelfie.jpeg').getDownloadURL();
 
         Map<String, String> seflieUrl = <String, String>{
+          "firstPhoto" : "https://vignette.wikia.nocookie.net/konosuba/images/4/4f/Megumin_1.jpg/revision/latest?cb=20180502131754",
+          "secondaryPhoto" : "https://vignette.wikia.nocookie.net/konosuba/images/4/4f/Megumin_1.jpg/revision/latest?cb=20180502131754",
           "selfie" : "$downloadUrl",
         };
 
-        userReference.document("${user.uid}").collection("photos").document("photosDoc").updateData(seflieUrl).whenComplete(() {
+        userReference.document(gender).collection("profiles").document("${user.uid}").collection("photos").document("photosDoc").setData(seflieUrl).whenComplete(() {
           print("User Selfie Added");
+          var route = new MaterialPageRoute(
+              builder: (BuildContext context) =>
+              new profileCard1(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
+          );
+
+          Navigator.of(context).push(route);
         }).catchError((e) => print(e));
 
-        var route = new MaterialPageRoute(
-            builder: (BuildContext context) =>
-            new profileCard1(value: happy, primary: primarySchoolColor, secondary: secondarySchoolColor,)
-        );
 
-        Navigator.of(context).push(route);
       }
     });
   }
